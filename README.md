@@ -2,19 +2,20 @@
 
 A Model Context Protocol (MCP) server for integrating with Bitbucket Cloud and Server APIs. This MCP server enables AI assistants like Cursor to interact with your Bitbucket repositories, pull requests, and other resources.
 
+> **This is a fork** of [MatanYemini/bitbucket-mcp](https://github.com/MatanYemini/bitbucket-mcp) with extra fixes and tools.
+> It is not published to npm: install it straight from GitHub with `npx -y github:jmferreiratech/bitbucket-mcp` (see [Installation](#installation)).
+
 ## Safety First
 
 This is a safe and responsible package — no DELETE operations are used, so there's no risk of data loss.
 Every pull request is analyzed with CodeQL to ensure the code remains secure.
 
 [![CodeQL](https://github.com/MatanYemini/bitbucket-mcp/actions/workflows/github-code-scanning/codeql/badge.svg)](https://github.com/MatanYemini/bitbucket-mcp/actions/workflows/github-code-scanning/codeql)
-[![GitHub Repository](https://img.shields.io/badge/GitHub-Repository-blue.svg)](https://github.com/MatanYemini/bitbucket-mcp)
+[![GitHub Repository](https://img.shields.io/badge/GitHub-Repository-blue.svg)](https://github.com/jmferreiratech/bitbucket-mcp)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![npm version](https://badge.fury.io/js/bitbucket-mcp.svg)](https://www.npmjs.com/package/bitbucket-mcp)
 
 ## Overview
 
-Checkout out the [official npm package](https://www.npmjs.com/package/bitbucket-mcp)
 This server implements the Model Context Protocol standard to provide AI assistants with access to Bitbucket data and operations. It includes tools for:
 
 - Listing and retrieving repositories
@@ -28,7 +29,8 @@ This server implements the Model Context Protocol standard to provide AI assista
 
 ### Using NPX (Recommended)
 
-The easiest way to use this MCP server is via NPX, which allows you to run it without installing it globally:
+The easiest way to use this MCP server is via NPX, which allows you to run it without installing it globally.
+NPX installs the prebuilt package from this repository's `release` branch:
 
 ```bash
 # Option A (recommended): API URL + explicit workspace
@@ -36,14 +38,17 @@ BITBUCKET_URL="https://api.bitbucket.org/2.0" \
 BITBUCKET_WORKSPACE="your-workspace" \
 BITBUCKET_USERNAME="your-username" \
 BITBUCKET_PASSWORD="your-app-password" \
-npx -y bitbucket-mcp@latest
+npx -y github:jmferreiratech/bitbucket-mcp
 
 # Option B (legacy-compatible): web URL only; workspace is auto-extracted
 BITBUCKET_URL="https://bitbucket.org/your-workspace" \
 BITBUCKET_USERNAME="your-username" \
 BITBUCKET_PASSWORD="your-app-password" \
-npx -y bitbucket-mcp@latest
+npx -y github:jmferreiratech/bitbucket-mcp
 ```
+
+To pin a version, append a release tag (`github:jmferreiratech/bitbucket-mcp#v5.1.0`) or a semver range (`github:jmferreiratech/bitbucket-mcp#semver:^5.1.0`).
+Available versions are listed in the repository's [tags](https://github.com/jmferreiratech/bitbucket-mcp/tags).
 
 ### Manual Installation
 
@@ -51,10 +56,10 @@ Alternatively, you can install it globally or as part of your project:
 
 ```bash
 # Install globally
-npm install -g bitbucket-mcp
+npm install -g github:jmferreiratech/bitbucket-mcp
 
 # Or install in your project
-npm install bitbucket-mcp
+npm install github:jmferreiratech/bitbucket-mcp
 ```
 
 Then run it with:
@@ -172,7 +177,7 @@ To integrate this MCP server with Cursor:
     "BITBUCKET_USERNAME": "your-username",
     "BITBUCKET_PASSWORD": "your-app-password"
   },
-  "args": ["-y", "bitbucket-mcp@latest"]
+  "args": ["-y", "github:jmferreiratech/bitbucket-mcp"]
 }
 ```
 
@@ -712,7 +717,7 @@ Gets logs for a specific pipeline step.
 
 ```bash
 # Clone the repository
-git clone https://github.com/MatanYemini/bitbucket-mcp.git
+git clone https://github.com/jmferreiratech/bitbucket-mcp.git
 cd bitbucket-mcp
 
 # Install dependencies
@@ -725,24 +730,21 @@ npm run build
 npm run dev
 ```
 
-## Publishing to the MCP Registry
+## Releasing
 
-Use the official Model Context Protocol publishing guide when you are ready to make a new server release. The repository includes
-everything that guide expects:
+Releases are built by the GitHub Action in `.github/workflows/release-branch.yml`. On every push to `master` whose
+`package.json` version has no tag yet, it runs the tests, builds `dist/`, commits the built package to the `release`
+branch and tags it `v<version>`.
 
-1. Build the project so `dist/index.js` is up to date:
-   ```bash
-   npm run build
-   ```
-2. Generate the registry manifest (this reads `package.json` and emits `registry/bitbucket-mcp.manifest.json`):
-   ```bash
-   npm run registry:manifest
-   ```
-3. Follow the [publish-server guide](https://github.com/modelcontextprotocol/registry/blob/main/docs/guides/publishing/publish-server.md)
-   to push the manifest with `smithery publish` or the recommended workflow from the guide.
+To release, run one of these on an up-to-date `master` with a clean working tree:
 
-The generated manifest captures the CLI command (`node dist/index.js`), all documented configuration options, and pointers back to
-this README for setup instructions, so it can be submitted directly to the MCP registry.
+```bash
+npm run publish:patch   # 5.1.0 -> 5.1.1
+npm run publish:minor   # 5.1.0 -> 5.2.0
+npm run publish:major   # 5.1.0 -> 6.0.0
+```
+
+Each one bumps the version, commits it as `chore: release v<version>` and pushes `master`, which starts the Action.
 
 ## License
 
@@ -750,8 +752,8 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## Links
 
-- [GitHub Repository](https://github.com/MatanYemini/bitbucket-mcp)
-- [npm Package](https://www.npmjs.com/package/bitbucket-mcp)
+- [GitHub Repository](https://github.com/jmferreiratech/bitbucket-mcp)
+- [Upstream Repository](https://github.com/MatanYemini/bitbucket-mcp)
 - [Model Context Protocol](https://modelcontextprotocol.io/)
 - [Bitbucket REST API Documentation](https://developer.atlassian.com/cloud/bitbucket/rest/intro/)
 - [Bitbucket Cloud Documentation](https://support.atlassian.com/bitbucket-cloud/)
