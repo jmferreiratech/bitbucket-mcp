@@ -1,0 +1,82 @@
+name: Publish built package to release branch
+
+# Builds the package and commits the result to the `release` branch, tagged
+# v<version>, so it can be installed with `npx -y github:<owner>/bitbucket-mcp`.
+# Publishes only when package.json carries a version that has no tag yet.
+
+on:
+  push:
+    branches: [master]
+  workflow_dispatch:
+
+concurrency:
+  group: release-branch
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v5
+
+      - name: Read version
+        id: version
+        run: |
+          VERSION=$(jq -r .version package.json)
+          echo "tag=v$VERSION" >> "$GITHUB_OUTPUT"
+          if git ls-remote --exit-code --tags origin "refs/tags/v$VERSION" > /dev/null; then
+            echo "Tag v$VERSION already exists, nothing to publish."
+            echo "publish=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "publish=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Setup Node.js
+        if: steps.version.outputs.publish == 'true'
+        uses: actions/setup-node@v5
+        with:
+          node-version: "lts/*"
+          cache: npm
+
+      - name: Install, test and build
+        if: steps.version.outputs.publish == 'true'
+        run: |
+          npm ci
+          npm test
+          npm run build
+
+      - name: Check out release branch
+        if: steps.version.outputs.publish == 'true'
+        run: |
+          if git ls-remote --exit-code --heads origin release > /dev/null; then
+            git fetch origin release
+            git worktree add -B release release-tree origin/release
+          else
+            git worktree add --orphan -b release release-tree
+          fi
+
+      # Git installs run `prepare` and install devDependencies, which would fail
+      # without the sources, so the published package.json drops build scripts.
+      - name: Assemble release contents
+        if: steps.version.outputs.publish == 'true'
+        run: |
+          find release-tree -mindepth 1 -maxdepth 1 ! -name .git -exec rm -rf {} +
+          cp -r dist README.md LICENSE release-tree/
+          jq 'del(.scripts, .devDependencies)' package.json > release-tree/package.json
+
+      - name: Commit, tag and push
+        if: steps.version.outputs.publish == 'true'
+        working-directory: release-tree
+        env:
+          TAG: ${{ steps.version.outputs.tag }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "release $TAG (built from $GITHUB_SHA)"
+          git tag "$TAG"
+          git push origin release "refs/tags/$TAG"
