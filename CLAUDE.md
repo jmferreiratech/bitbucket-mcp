@@ -31,9 +31,9 @@ npm run inspector    # Launch MCP inspector for debugging tools
 
 ### Publishing
 ```bash
-npm run publish:patch   # Bump patch version and publish
-npm run publish:minor   # Bump minor version and publish
-npm run publish:major   # Bump major version and publish
+npm run publish:patch   # Bump patch version, commit and push (CI publishes it)
+npm run publish:minor   # Bump minor version, commit and push (CI publishes it)
+npm run publish:major   # Bump major version, commit and push (CI publishes it)
 npm run release         # Alias for publish:patch
 ```
 
